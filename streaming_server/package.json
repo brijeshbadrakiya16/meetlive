@@ -1,0 +1,21 @@
+{
+  "name": "streaming_server",
+  "version": "1.0.0",
+  "main": "stream_server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node stream_server.js",
+    "dev": "node --watch stream_server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
