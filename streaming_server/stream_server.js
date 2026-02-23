@@ -12,7 +12,7 @@ const httpServer = http.createServer()
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:4000', '*'],
+    origin: ['http://localhost:5173', 'http://localhost:4000', 'https://meetlive-02.vercel.app', 'https://meetlive-backend.onrender.com', '*'],
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -139,7 +139,7 @@ io.on('connection', (socket) => {
     // Add approved user to the meeting room
     const approvedSocket = io.sockets.sockets.get(joinRequest.socketId)
     console.log(`🔍 Looking for socket ${joinRequest.socketId} - Found: ${!!approvedSocket}`)
-    
+
     if (approvedSocket) {
       console.log(`✅ Adding socket ${joinRequest.socketId} to room meeting-${meetingCode}`)
       approvedSocket.join(`meeting-${meetingCode}`)
@@ -199,8 +199,8 @@ io.on('connection', (socket) => {
   socket.on('send-offer', (data) => {
     const { meetingCode, targetUserId, offer } = data
     const meeting = getOrCreateMeeting(meetingCode)
-    const targetUser = meeting.participants.get(targetUserId) || 
-                        (meeting.host?.id === targetUserId && meeting.host)
+    const targetUser = meeting.participants.get(targetUserId) ||
+      (meeting.host?.id === targetUserId && meeting.host)
 
     if (targetUser) {
       const targetSocket = io.sockets.sockets.get(targetUser.socketId)
@@ -218,8 +218,8 @@ io.on('connection', (socket) => {
   socket.on('send-answer', (data) => {
     const { meetingCode, targetUserId, answer } = data
     const meeting = getOrCreateMeeting(meetingCode)
-    const targetUser = meeting.participants.get(targetUserId) || 
-                        (meeting.host?.id === targetUserId && meeting.host)
+    const targetUser = meeting.participants.get(targetUserId) ||
+      (meeting.host?.id === targetUserId && meeting.host)
 
     if (targetUser) {
       const targetSocket = io.sockets.sockets.get(targetUser.socketId)
@@ -236,8 +236,8 @@ io.on('connection', (socket) => {
   socket.on('send-ice-candidate', (data) => {
     const { meetingCode, targetUserId, candidate } = data
     const meeting = getOrCreateMeeting(meetingCode)
-    const targetUser = meeting.participants.get(targetUserId) || 
-                        (meeting.host?.id === targetUserId && meeting.host)
+    const targetUser = meeting.participants.get(targetUserId) ||
+      (meeting.host?.id === targetUserId && meeting.host)
 
     if (targetUser) {
       const targetSocket = io.sockets.sockets.get(targetUser.socketId)
@@ -275,7 +275,7 @@ io.on('connection', (socket) => {
   socket.on('leave-meeting', (data) => {
     const { meetingCode, userId } = data
     const meeting = getOrCreateMeeting(meetingCode)
-    
+
     meeting.participants.delete(userId)
     io.to(`meeting-${meetingCode}`).emit('user-left', {
       userId

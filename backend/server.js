@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5000', '*'],
+  origin: ['http://localhost:5173', 'http://localhost:5000', 'https://meetlive-02.vercel.app', 'https://meetlive-streaming.onrender.com', '*'],
   credentials: true
 }))
 app.use(express.json())
