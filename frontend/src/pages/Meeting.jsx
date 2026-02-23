@@ -87,6 +87,42 @@ export default function Meeting() {
       console.log('👥 Meeting participants:', data)
       if (data.host) {
         setHostName(data.host.userName)
+        // Add host to participants list so it shows in video grid
+        // Stream will be added when offer/answer completes
+        if (!isHost) {
+          console.log('📨 Adding host to participants list')
+          setParticipants(prev => {
+            const exists = prev.find(p => p.id === data.host.id)
+            if (!exists) {
+              return [{
+                id: data.host.id,
+                name: data.host.userName,
+                stream: null, // Stream will come later from offer
+                isLocal: false
+              }, ...prev]
+            }
+            return prev
+          })
+        }
+      }
+      // Add other participants
+      if (data.participants && Array.isArray(data.participants)) {
+        console.log('📨 Adding', data.participants.length, 'existing participants')
+        setParticipants(prev => {
+          const newParticipants = [...prev]
+          data.participants.forEach(participant => {
+            const exists = newParticipants.find(p => p.id === participant.id)
+            if (!exists) {
+              newParticipants.push({
+                id: participant.id,
+                name: participant.userName,
+                stream: null,
+                isLocal: false
+              })
+            }
+          })
+          return newParticipants
+        })
       }
     }
 
@@ -95,22 +131,32 @@ export default function Meeting() {
       const { userId: newUserId, userName: newUserName, isHost: isNewUserHost } = data
 
       if (!isNewUserHost && isHost) {
+        // Add participant to list immediately (stream will be added later)
+        console.log('👥 Adding participant to list:', newUserName)
+        setParticipants(prev => {
+          const exists = prev.find(p => p.id === newUserId)
+          if (!exists) {
+            return [...prev, {
+              id: newUserId,
+              name: newUserName,
+              stream: null,
+              isLocal: false
+            }]
+          }
+          return prev
+        })
+
         try {
+          console.log('🏠 Host creating offer for new participant:', newUserId)
           const offer = await webrtcService.createOffer(
             newUserId,
             (candidate) => socketService.sendIceCandidate(code, newUserId, candidate),
             (stream) => {
+              console.log('📹 Stream received from participant', newUserId, 'tracks:', stream.getTracks().length)
               setParticipants(prev => {
-                const exists = prev.find(p => p.id === newUserId)
-                if (!exists) {
-                  return [...prev, {
-                    id: newUserId,
-                    name: newUserName,
-                    stream,
-                    isLocal: false
-                  }]
-                }
-                return prev
+                return prev.map(p =>
+                  p.id === newUserId ? { ...p, stream } : p
+                )
               })
             }
           )
@@ -131,9 +177,18 @@ export default function Meeting() {
           offer,
           (candidate) => socketService.sendIceCandidate(code, senderId, candidate),
           (stream) => {
+            console.log('📹 Stream received from', senderId, 'tracks:', stream.getTracks().length)
             setParticipants(prev => {
               const exists = prev.find(p => p.id === senderId)
-              if (!exists) {
+              if (exists) {
+                // Update existing participant with stream
+                console.log('📹 Updating existing participant', senderId, 'with stream')
+                return prev.map(p => 
+                  p.id === senderId ? { ...p, stream } : p
+                )
+              } else {
+                // Create new participant if doesn't exist
+                console.log('📹 Creating new participant', senderId, 'with stream')
                 return [...prev, {
                   id: senderId,
                   name: senderName,
@@ -141,7 +196,6 @@ export default function Meeting() {
                   isLocal: false
                 }]
               }
-              return prev
             })
           }
         )
